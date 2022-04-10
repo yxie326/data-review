@@ -7,9 +7,7 @@
     \setbeamercovered{transparent = 28}
 }
 
-\title{This is a simple \\
-\LaTeX{} \\
-beamer demonstration}
+\title{Data Review}
 
 \author{Yi Xie}
 \GTtoc{Table of contents}
@@ -18,19 +16,27 @@ beamer demonstration}
 
 \GTtitle
 
-\section{Section}
+\section{Introduction}
 
-    \subsection{Subsection 1}
+    \subsection{Overview}
 
-        \begin{frame}{Test}
-            \begin{itemize}
-                \item Test1
-                \pause
-                \item Test1
-                \pause
-                \item Test1
-            \end{itemize}
-        \end{frame}
+		\begin{frame}{Theoretical Methods for Intermolecular Interaction}
+		  \begin{itemize}
+		      \item Supermolecular approach 
+		        $$E_{int} = E_{AB} - E_A - E_B$$
+		        \begin{itemize}
+		            \item Straightforward, but cannot separate different types of interactions
+		            \item Can adopt to different electronic structure methods
+					\item DFT-D3 with proper functional can be both cheap and accurate
+		        \end{itemize}
+		      \item Symmetry-Adapted Perturbation Theory
+		      \begin{itemize}
+		          \item Can give details about different types of interactions; important in understanding the nature of them
+		          \item Not as cheap as DFT-D3
+				  \item SAPT0 is somewhat cheap, but does not include intramonomer correlation
+		      \end{itemize}
+		  \end{itemize}
+		\end{frame}
 
     \subsection{Subsection 2}
 
