@@ -7,6 +7,8 @@
     \setbeamercovered{transparent = 28}
 }
 
+\usepackage{braket}
+
 \title{Data Review}
 
 \author{Yi Xie}
@@ -57,19 +59,31 @@
 
 \section{SAPT(DFT) Implementation}
     
-    \subsection{Introduction}
+    \subsection{Theory}
              
-        \begin{frame}{Introduction}
-        
+        \begin{frame}{Idea of SAPT(DFT)}
             \begin{itemize}
                 \item SAPT energy in orders of interaction and fluctuation potentials; $n$ denotes order in $V$ and $k,l$ for $W_A, W_B$
                 $$H = F_A + F_B + V + W_A + W_B$$
                 $$E_{int} = \sum_{n=1}^\infty \sum_{k=0}^\infty \sum_{l=0}^\infty \left(E_{pol}^{(nkl)} + E_{exch}^{(nkl)}\right)$$
-                \item Different truncation for various SAPT levels, $k,l \geq 2$ for intramolecular correlation, introduces expensive cross-term with order $(n+k+l)$
-                \item Cheap intramolecular correlation with SAPT(DFT), use Kohn-Sham operator $K_{A,B}$ instead of Fock operator $F_{A,B}$ and $k,l=0$
-                \item Primitive SAPT(DFT) or SAPT(KS) works well on 1st-order terms but not 2nd-order terms (induction, dispersion), needs orbital response for them
+                \item SAPT0: $n = 2, k = l = 0$, no intramonomer correlation, $O(N^5)$ cost
+                \item Many-body SAPT: $k,l \geq 2$, $O(N^7)$ or higher cost
+                \item SAPT(DFT): Use Kohn-Sham operator $K_{A,B}$ instead of Fock operator $F_{A,B}$, $O(N^5)$ cost
+                \item Primitive SAPT(DFT) works well on 1st-order terms but not 2nd-order terms (especially dispersion terms), needs orbital response for them
             \end{itemize}
-          
+        \end{frame}
+
+        \begin{frame}{Dispersion Term}
+            \begin{eqnarray}
+                E_{disp}^{(2)} &= -\sum_{m \neq 0, n \neq 0}\,\frac{\left| \braket{\Psi^A_0 \Psi^B_0|V_{AB}|\Psi^A_m \Psi^B_n}\right|^2}{E^A_m - E^A_0 + E^B_n - E^B_0} \\
+                &= -4\sum_{ia \in A,jb \in B} \frac{\left|\left(i^Aa^A|j^Bb^B\right)\right|^2}{\epsilon_a^A-\epsilon_i^A+\epsilon_b^B-\epsilon_j^B}
+            \end{eqnarray}
+            \begin{itemize}
+                \item ALDA kernel good for pure GGA functional but not for hybrid functional 
+                \item Exact exchange in $v_{xc} \rightarrow$ increased $\epsilon_{ij}^{ab} \rightarrow$ decreased $E_{disp}^{(2)}$ 
+                \item Either hybrid ALDA kernel or localized HF (LHF) exchange to compensate
+                $$f_{xc} = \alpha f_{xc}^{HF} + (1-\alpha) f_{xc}^{ALDA}$$
+            \end{itemize}            
         \end{frame}
 
 
