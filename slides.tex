@@ -95,7 +95,7 @@
                 \item $E_{disp}^{(2)}$ from coupled FDDS:
                 \begin{eqnarray}
                     \nonumber
-                    E_{\textrm{disp}}^{(2)} &= -\frac{1}{2\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B \\ \nonumber
+                    E_{disp}^{(2)} &= -\frac{1}{2\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B \\ \nonumber
                     & \frac{1}{\left|\mathbf{r}_A-\mathbf{r}_B\right|}\frac{1}{\left|\mathbf{r}'_A-\mathbf{r}'_B\right|}\chi^A\left(\mathbf{r}_A,\mathbf{r}'_A|i\omega\right)\chi^B\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)
                 \end{eqnarray}
             \end{itemize}
@@ -105,10 +105,10 @@
             \begin{itemize}
                 \item Coupled exchange-dispersion requires storing 4-index tensors on disk
                 \item Estimate from scaling uncoupled exchange-dispersion; Scale with ratio in dispersion term or with pre-fitted (with S22$\times$5) fixed factor 
-                $$\tilde{E}^{(2)}_{\textrm{exch-disp,r}} = E^{(2)}_{\textrm{exch-disp,u}} \cdot \frac{E^{(2)}_{\textrm{disp,r}}}{E^{(2)}_{\textrm{disp,u}}}$$
-                $$\tilde{E}^{(2)}_{\textrm{exch-disp,r}} = \alpha \cdot E^{(2)}_{\textrm{exch-disp,u}} (\alpha = 0.686361)$$
-                \item The value above is fitted from $E_{\textrm{exch-disp,u}}^{(2)}$ with LHF orbitals
-                \item Non-LHF orbitals have greater o-v gaps and smaller $E_{\textrm{disp,u}}^{(2)}$, needs to re-fit with non-LHF results
+                $$\tilde{E}^{(2)}_{exch-disp,r} = E^{(2)}_{exch-disp,u} \cdot \frac{E^{(2)}_{disp,r}}{E^{(2)}_{disp,u}}$$
+                $$\tilde{E}^{(2)}_{exch-disp,r} = \alpha \cdot E^{(2)}_{exch-disp,u} (\alpha = 0.686361)$$
+                \item The value above is fitted from $E_{exch-disp,u}^{(2)}$ with LHF orbitals
+                \item Non-LHF orbitals have greater o-v gaps and smaller $E_{disp,u}^{(2)}$, needs to re-fit with non-LHF results
             \end{itemize}
         \end{frame}
 
@@ -126,7 +126,7 @@
                 \item Underestimates o-v gap as a consequence
                 \item Functionals like LB94 have correct asymptotic behavior, but poor in bulk region
                 \item Using gradient-regulated asymptotic correction (GRAC) scheme to connect PBE0 and LB94 with the switching function $f[g(\boldsymbol{r})]$:
-                $$v_{xc}^{\textrm{GRAC}} = \left\{1-f[g(\boldsymbol{r})]\right\}v_{xc}^{\textrm{PBE0}} + f[g(\boldsymbol{r})] v_{xc}^{\textrm{LB94}}$$
+                $$v_{xc}^{\text{GRAC}} = \left\{1-f[g(\boldsymbol{r})]\right\}v_{xc}^{\text{PBE0}} + f[g(\boldsymbol{r})] v_{xc}^{\text{LB94}}$$
                 $$f[g(\boldsymbol{r})] = \left( 1+e^{-\alpha [g(\boldsymbol{r}) - \beta]} \right)^{-1}$$
                 $$g(\boldsymbol{r}) = \frac{\left| \nabla \rho (\boldsymbol{r}) \right|}{\rho^{4/3}(\boldsymbol{r})}$$
             \end{itemize}
