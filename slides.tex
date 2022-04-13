@@ -52,8 +52,9 @@
         \begin{itemize}
             \item Crucial in computing lattice energies
             \item DFT-D3 does not perform well for three-body interaction
-            \item MP2.5 scales as $O(N^6)$, MP2 $O(N^5)$ but lacks three-body dispersion
+            \item MP2.5 scales as $O(N^6)$, MP2 is $O(N^5)$ but lacks three-body dispersion
             \item Three-body dispersion can be implemented with SAPT(DFT) in $O(N^5)$
+            \item Combine MP2 with SAPT(DFT) dispersion to model three-body interaction  
         \end{itemize}   
     \end{frame}
 
@@ -69,22 +70,76 @@
                 \item SAPT0: $n = 2, k = l = 0$, no intramonomer correlation, $O(N^5)$ cost
                 \item Many-body SAPT: $k,l \geq 2$, $O(N^7)$ or higher cost
                 \item SAPT(DFT): Use Kohn-Sham operator $K_{A,B}$ instead of Fock operator $F_{A,B}$, $O(N^5)$ cost
-                \item Primitive SAPT(DFT) works well on 1st-order terms but not 2nd-order terms (especially dispersion terms), needs orbital response for them
+                \item Primitive SAPT(DFT) works well on 1st-order terms, but not 2nd-order terms (especially dispersion). Needs orbital response for them
             \end{itemize}
         \end{frame}
 
         \begin{frame}{Dispersion Term}
-            \begin{eqnarray}
-                E_{disp}^{(2)} &= -\sum_{m \neq 0, n \neq 0}\,\frac{\left| \braket{\Psi^A_0 \Psi^B_0|V_{AB}|\Psi^A_m \Psi^B_n}\right|^2}{E^A_m - E^A_0 + E^B_n - E^B_0} \\
-                &= -4\sum_{ia \in A,jb \in B} \frac{\left|\left(i^Aa^A|j^Bb^B\right)\right|^2}{\epsilon_a^A-\epsilon_i^A+\epsilon_b^B-\epsilon_j^B}
-            \end{eqnarray}
             \begin{itemize}
-                \item ALDA kernel good for pure GGA functional but not for hybrid functional 
+                \item ALDA kernel good for pure GGA functional, but not for hybrid functional 
                 \item Exact exchange in $v_{xc} \rightarrow$ increased $\epsilon_{ij}^{ab} \rightarrow$ decreased $E_{disp}^{(2)}$ 
-                \item Either hybrid ALDA kernel or localized HF (LHF) exchange to compensate
+                $$E_{disp,u}^{(2)} = -4\sum_{ia \in A,jb \in B} \frac{\left|\left(ia|jb\right)\right|^2}{\epsilon_{ij}^{ab}}$$
+                \item Hybrid ALDA kernel to compensate, or localized HF (LHF) exchange to avoid increase in $\epsilon_{ij}^{ab}$
                 $$f_{xc} = \alpha f_{xc}^{HF} + (1-\alpha) f_{xc}^{ALDA}$$
             \end{itemize}            
         \end{frame}
+
+        \begin{frame}{Equation for $E_{disp}^{(2)}$}
+            \begin{itemize}
+                \item Computing coupled FDDS:
+                $$\boldsymbol{\chi} = \boldsymbol{\chi}_0' + \left( \boldsymbol{\chi}_0' \mathbf{S}^{-1} \mathbf{W} + \mathbf{K} \right) \left[ \mathbf{S} - \left( \boldsymbol{\chi}_0' \mathbf{S}^{-1} \mathbf{W} + \mathbf{K} \right) \right]^{-1} \boldsymbol{\chi}_0'$$
+                $$\boldsymbol{\chi}_0' = \boldsymbol{\chi}_0 - \alpha \mathbf{K}_2 \left( \lambda \right)$$
+                $$\mathbf{K} = \left[ - \alpha \mathbf{K}_1 \left( \lambda d\right) - \alpha \mathbf{K}_2 \left( \lambda d\right) + \alpha^2 \mathbf{K}_{21} \left( \lambda \right) \right] \left( \mathbf{R}^t \right)^{-1} \mathbf{S}$$
+                \item $O(N^5)$ scaling is limited to forming  $\mathbf{K}_1$, $\mathbf{K}_2$ and $\mathbf{K}_{21}$
+                \item Separates nontrivial and trivial parts of the code, also highly reduces need of disk I/O operations
+                \item $E_{disp}^{(2)}$ from coupled FDDS:
+                \begin{eqnarray}
+                    \nonumber
+                    E_{\textrm{disp}}^{(2)} &= -\frac{1}{2\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B \\ \nonumber
+                    & \frac{1}{\left|\mathbf{r}_A-\mathbf{r}_B\right|}\frac{1}{\left|\mathbf{r}'_A-\mathbf{r}'_B\right|}\chi^A\left(\mathbf{r}_A,\mathbf{r}'_A|i\omega\right)\chi^B\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)
+                \end{eqnarray}
+            \end{itemize}
+        \end{frame}
+        
+        \begin{frame}{Exchange-Dispersion Term}
+            \begin{itemize}
+                \item Coupled exchange-dispersion requires storing 4-index tensors on disk
+                \item Estimate from scaling uncoupled exchange-dispersion; Scale with ratio in dispersion term or with pre-fitted (with S22$\times$5) fixed factor 
+                $$\tilde{E}^{(2)}_{\textrm{exch-disp,r}} = E^{(2)}_{\textrm{exch-disp,u}} \cdot \frac{E^{(2)}_{\textrm{disp,r}}}{E^{(2)}_{\textrm{disp,u}}}$$
+                $$\tilde{E}^{(2)}_{\textrm{exch-disp,r}} = \alpha \cdot E^{(2)}_{\textrm{exch-disp,u}} (\alpha = 0.686361)$$
+                \item The value above is fitted from $E_{\textrm{exch-disp,u}}^{(2)}$ with LHF orbitals
+                \item Non-LHF orbitals have greater o-v gaps and smaller $E_{\textrm{disp,u}}^{(2)}$, needs to re-fit with non-LHF results
+            \end{itemize}
+        \end{frame}
+
+        \begin{frame}{LHF vs non-LHF orbitals}
+            \begin{figure}
+            \centering
+            \includegraphics[width=\textwidth]{S66-terms.png}
+            \caption*{Hybrid vs. LHF values for each term for S66 data set ($E_{elst}^{(1)}$, $E_{exch}^{(1)}$, $E_{ind}^{(2)}$, $E_{exch-ind}^{(2)}$, $E_{disp,r}^{(2)}$, $E_{disp,u}^{(2)}$, $E_{exch-disp,u}^{(2)}$)} 
+            \end{figure}        
+        \end{frame}
+
+        \begin{frame}{GRAC}
+            \begin{itemize}
+                \item (Hybrid-)GGA functionals does not have correct long-range behavior $v_{xc}(r) \rightarrow -1/r + (I_p + \epsilon_{\text{HOMO}})$
+                \item Underestimates o-v gap as a consequence
+                \item Functionals like LB94 have correct asymptotic behavior, but poor in bulk region
+                \item Using gradient-regulated asymptotic correction (GRAC) scheme to connect PBE0 and LB94 with the switching function $f[g(\boldsymbol{r})]$:
+                $$v_{xc}^{\textrm{GRAC}} = \left\{1-f[g(\boldsymbol{r})]\right\}v_{xc}^{\textrm{PBE0}} + f[g(\boldsymbol{r})] v_{xc}^{\textrm{LB94}}$$
+                $$f[g(\boldsymbol{r})] = \left( 1+e^{-\alpha [g(\boldsymbol{r}) - \beta]} \right)^{-1}$$
+                $$g(\boldsymbol{r}) = \frac{\left| \nabla \rho (\boldsymbol{r}) \right|}{\rho^{4/3}(\boldsymbol{r})}$$
+            \end{itemize}
+        \end{frame}        
+        
+        \begin{frame}{GRAC \& Long-Range Behavior}
+            \begin{figure}
+            \centering
+            \includegraphics[width=\textwidth]{GRAC.png}
+            \caption*{Radial densities $r^2\rho(r)$ of Ne atom (right) and errors compared to CCSD(T) density (left) for various xc potentials.\footnote{G. Jansen, WIREs Comput. Mol. Sci. \textbf{4}, 127 (2014).}} 
+            \end{figure}
+        \end{frame}
+
 
 
         \begin{frame}{Test 5}
