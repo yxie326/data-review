@@ -8,6 +8,8 @@
 }
 
 \usepackage{braket}
+\usepackage{caption}
+\usepackage{siunitx}
 
 \title{Data Review}
 
@@ -140,89 +142,89 @@
             \end{figure}
         \end{frame}
 
-
-
-        \begin{frame}{Test 5}
-
-            \begin{tabular}{|c|c|c|}
-            \hline
-            \textbf{Test0} & \textbf{Test1} & \textbf{Test2} \\
-            \hline
-            Test1 & Test2 & Test3 \LaTeX  \\
-            \hline
-            Test4 & Test5& Test6\\
-            \hline
-            \end{tabular}
-            
+    \subsection{Results}
+    
+        \begin{frame}{Exchange-Dispersion Refitting}
+            \begin{itemize}
+                \item Need to fit the uncoupled $E_{exch-disp,r}^{(2)}$ with non-LHF orbitals on the coupled LHF orbital values (implemented in Molpro)
+                \item Assuming coupled LHF and non-LHF orbital $E_{exch-disp,r}^{(2)}$ from the behavior of $E_{disp,r}^{(2)}$
+                \item Exchange-related components depend heavily on distance between monomers, sets like S22$\times$5 and S66$\times$8 would be preferred
+                \item Determine the scaling factor with S22$\times$5, validate with S66$\times$8 
+            \end{itemize}
         \end{frame}
 
-        \begin{frame}{Test 6}
-
-            \begin{exampleblock}{Example block}
-                \smallskip 
-
-                \begin{tabular}{|c|c|c|}
-                \hline
-                \textbf{Test0} & \textbf{Test1} & \textbf{Test2} \\
-                \hline
-                Test1 & Test2 & Test3 \LaTeX  \\
-                \hline
-                Test4 & Test5& Test6\\
-                \hline
-                \end{tabular}
-            \end{exampleblock}
-
-            \begin{block}{Block}
-                \smallskip 
-
-                \begin{tabular}{|c|c|c|}
-                \hline
-                \textbf{Test0} & \textbf{Test1} & \textbf{Test2} \\
-                \hline
-                Test1 & Test2 & Test3 \LaTeX  \\
-                \hline
-                Test4 & Test5& Test6\\
-                \hline
-                \end{tabular}
-            \end{block}
+        \begin{frame}{S22$\times$5 Fitting Results}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.66\textwidth]{S22x5-exchdisp.png}
+                \caption{Scaling Factor = 0.770}
+            \end{figure}   
         \end{frame}
 
-	 \begin{frame}{Test 7}
-            
-         	\begin{block}{Block A}
-            
-                \begin{description}[longest label]
-                    \item[short] Short stuff
-                    \item[long] Longer stuff
-                    \item[longest label] Longest stuff (insert cat)
-                \end{description}
-            
-                \begin{itemize}
-                    \item item1
-                    \item item2
-                    \item item3
-                \end{itemize}  
-            \end{block}
-
+        \begin{frame}{S66$\times8$ Validating Results}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.6\textwidth]{S66x8-exchdisp.png}
+            \end{figure}  
         \end{frame}
 
-        \begin{frame}[t]{Frame with Columns}
-            \begin{columns}[t]
-                \column{0.4\textwidth}
-
-                \begin{block}{Block 1}
-                    Text here
-                \end{block}
-
-                \column{0.4\textwidth}
-
-                \begin{block}{Block 2}
-                    More text here
-                \end{block}
-            \end{columns}
+        \begin{frame}{Termwise results}
+            \begin{itemize}
+                \item Compared the SAPT(DFT)/aug-cc-pVTZ results of our code to SAPT(CCSD)/aug-cc-pVTZ results from Korona S2\footnote{T. Korona, Mol. Phys. \textbf{111}, 3705 (2013).}, which consists of 14 small dimers
+                \item Also comparing the results for S66. SAPT(CCSD) results are not available, used SAPT2+3(CCD)$\delta$MP2/aug-cc-pVTZ as reference. Also added SAPT0/aug-cc-pVDZ, SAPT2+/aug-cc-pVDZ and SAPT2+(3)$\delta$MP2/aug-cc-pVTZ into comparison as side-reference. 
+                \item Exchange-induction and exchange-dispersion not separated out for S66
+                \item Errors of each system with respect to reference shown as vertical lines
+                \item Mean absolute error (MAE) and mean unsigned relative error (MURE) listed for S2
+                \item Color scheme for S66 systems: Hydrogen-bonded (HB, red), mixed-influence (MX, green), dispersion-dominated (DD, blue)
+            \end{itemize}
         \end{frame}
 
-        \begin{frame}[t]{Frame without Columns}
+        \begin{frame}{Korona S2 Results}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\textwidth]{S2_1.png}
+            \end{figure}  
+        \end{frame}
+
+        \begin{frame}{Korona S2 Results}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\textwidth]{S2_2.png}
+            \end{figure}  
+        \end{frame}
+
+        \begin{frame}{S66 Results}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\textwidth]{S66_1.png}
+            \end{figure}  
+        \end{frame}
+
+        \begin{frame}{S66 Results}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\textwidth]{S66_1.png}
+            \end{figure}  
+        \end{frame}
+
+        \begin{frame}{Timing Performance}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\textwidth]{timingsystems.png}
+                \caption{Dimer systems for timing: (a) Watson-Crick adenine-thymine complex, (b) RDX dimer, (c) C$_{60}$--buckycather complex.}
+            \end{figure}
+        \end{frame}
+
+        \begin{frame}{Watson-Crick Adenine-Thymine}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\textwidth]{wcat.png}
+            \end{figure}
+        \end{frame}
+
+
+
+        \begin{frame}[t]{Fram without Columns}
             \leavevmode
             \begin{block}{Block}
                 Even more text here
