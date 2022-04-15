@@ -252,7 +252,7 @@
             \begin{itemize}
                 \item Benchmark set for 3-body interaction energies
                 \item 69 trimers extracted from 23 different molecular crystal structures (3 each)
-                \item Focal point approach
+                \item Used focal point approach to obtain CCSD(T) (and other wavefunction method) energies
                 $$E = E^{HF}(aQZ) + \Delta E^{MP2}(aTZ/aQZ) + \Delta E^{CCSD(T)}(aDZ) $$   
                 \item Assessing accuracy for various wavefunction and DFT methods 
                 \item Recommended MP2.5 and SCS-MI-CCSD, both $O(N^6)$
@@ -263,7 +263,7 @@
         \begin{frame}{3B-69 Wavefunctional Methods}
             \begin{figure}
                 \centering
-                \includegraphics[width=0.8\textwidth]{3B69_wfn.png}
+                \includegraphics[width=0.6\textwidth]{3B69_wfn.png}
             \end{figure}
         \end{frame}
 
@@ -289,23 +289,60 @@
         \begin{frame}{3B-69 Systems}
             \begin{figure}
                 \centering
-                \includegraphics[width=0.6\textwidth]{3B69_systems.png}
+                \includegraphics[width=0.7\textwidth]{3B69_systems.png}
             \end{figure}
         \end{frame}
         
         \begin{frame}{3B-69 Results}
+            \begin{itemize}
+                \item Total interaction energies in kcal/mol
+                \item FDDS(aDZ) and FDDS(aTZ) correspond to estimated total IE with MP2 + FDDS
+            \end{itemize}
             \begin{table}
                 \centering
-                \begin{tabular}{c c c c c c c}
+                \begin{tabular}{c c c c c c}
                     \hline
-                    System & CCSD(T) & FDDS(aDZ) & FDDS(aTZ) & MP2 & MP2.5 & SCS-MI-CCSD \\ \hline
-                    \textbf{1} & 0.181 & 0.207 & 0.210 & 0.161 & 0.179 & 0.178 \\ 
-                    \textbf{2} & -0.122 & -0.069 & -0.065 & -0.178 & -0.143 & -0.128 \\
-                    \textbf{3} & -0.922 & -0.905 & -0.904 & -0.937 & -0.913 & -0.918 \\
-                    \textbf{4} & -0.089 & -0.003 & -0.003 & -0.239 & -0.151 & -0.100 \\
-                    \textbf{5} & -0.027 & 0.002 & 0.003 & -0.061 & -0.023 & -0.026 \\ \hline
+                    System & CCSD(T) & FDDS(aDZ) & FDDS(aTZ) & MP2 & MP2.5 \\ \hline
+                    \textbf{1} & 0.181 & 0.207 & 0.210 & 0.161 & 0.179 \\ 
+                    \textbf{2} & -0.122 & -0.069 & -0.065 & -0.178 & -0.143 \\
+                    \textbf{3} & -0.922 & -0.905 & -0.904 & -0.937 & -0.913 \\
+                    \textbf{4} & -0.089 & -0.003 & -0.003 & -0.239 & -0.151 \\
+                    \textbf{5} & -0.027 & 0.002 & 0.003 & -0.061 & -0.023 \\ \hline
                 \end{tabular}
             \end{table}
+        \end{frame}
+        
+        \begin{frame}{3B-69 Results}
+            \begin{itemize}
+                \item Estimated 3-body dispersion energies comparison
+                \item CCSD(T) corresponds to dispersion energy estimated by $E^{CCSD(T)} - E^{\text{MP2}}$
+            \end{itemize}
+            \begin{table}
+                \centering
+                \begin{tabular}{c c c c}
+                    \hline
+                    System & CCSD(T) & FDDS(aDZ) & FDDS(aTZ) \\ \hline
+                    \textbf{1} & 0.020 & 0.046 & 0.049 \\ 
+                    \textbf{2} & 0.056 & 0.109 & 0.113 \\
+                    \textbf{3} & 0.015 & 0.032 & 0.033 \\
+                    \textbf{4} & 0.150 & 0.236 & 0.242 \\
+                    \textbf{5} & 0.034 & 0.063 & 0.064 \\ \hline
+                \end{tabular}
+            \end{table}
+        \end{frame}
+
+        \begin{frame}{Distance Dependence}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.7\textwidth]{benzene_FDDS.png}
+            \end{figure}
+        \end{frame}
+
+        \begin{frame}{Distance Dependence}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.7\textwidth]{benzene_FDDS_log.png}
+            \end{figure}
         \end{frame}
 
 \end{document}
