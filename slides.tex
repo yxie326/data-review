@@ -70,15 +70,30 @@
                 $$H = F_A + F_B + V + W_A + W_B$$
                 $$E_{int} = \sum_{n=1}^\infty \sum_{k=0}^\infty \sum_{l=0}^\infty \left(E_{pol}^{(nkl)} + E_{exch}^{(nkl)}\right)$$
                 \item SAPT0: $n = 2, k = l = 0$, no intramonomer correlation, $O(N^5)$ cost
-                \item Many-body SAPT: $k,l \geq 2$, $O(N^7)$ or higher cost
+                \item Many-body SAPT: $k+l \geq 2$, $O(N^6)$ or higher cost
                 \item SAPT(DFT): Use Kohn-Sham operator $K_{A,B}$ instead of Fock operator $F_{A,B}$, $O(N^5)$ cost
                 \item Primitive SAPT(DFT) works well on 1st-order terms, but not 2nd-order terms (especially dispersion). Needs orbital response for them
             \end{itemize}
         \end{frame}
 
+        \begin{frame}{Coupled Dispersion Energy}
+            \begin{itemize}
+                \item Uncoupled dispersion energy:
+                \begin{eqnarray}
+                    \nonumber
+                    E_{disp,u}^{(2)} &= -4\sum_{ia \in A,jb \in B} \frac{\left|\left(ia|jb\right)\right|^2}{\epsilon_{ij}^{ab}}\\ \nonumber
+                    &= -\frac{1}{2\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B \\ \nonumber
+                    & \frac{1}{\left|\mathbf{r}_A-\mathbf{r}_B\right|}\frac{1}{\left|\mathbf{r}'_A-\mathbf{r}'_B\right|}\chi_0^A\left(\mathbf{r}_A,\mathbf{r}'_A|i\omega\right)\chi_0^B\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)
+                \end{eqnarray}
+                \item Kohn-Sham frequency-dependent density susceptibility (FDDS) does not reflect the correct response properties of the real electronic system
+                \item Coupled FDDS from solving TDDFT equations:
+                $$\boldsymbol{\chi} = \boldsymbol{\chi}_0 + \boldsymbol{\chi}_0 \mathbf{S}^{-1} \mathbf{W}) \left( \mathbf{S} - \boldsymbol{\chi}_0 \mathbf{S}^{-1} \mathbf{W} \right)^{-1} \boldsymbol{\chi}_0$$
+            \end{itemize}
+        \end{frame}
+
         \begin{frame}{Dispersion Term}
             \begin{itemize}
-                \item ALDA kernel good for pure GGA functional, but not for hybrid functional 
+                \item Pure ALDA kernel good for pure GGA functional, but not for hybrid functional 
                 \item Exact exchange in $v_{xc} \rightarrow$ increased $\epsilon_{ij}^{ab} \rightarrow$ decreased $E_{disp}^{(2)}$ 
                 $$E_{disp,u}^{(2)} = -4\sum_{ia \in A,jb \in B} \frac{\left|\left(ia|jb\right)\right|^2}{\epsilon_{ij}^{ab}}$$
                 \item Hybrid ALDA kernel to compensate, or localized HF (LHF) exchange to avoid increase in $\epsilon_{ij}^{ab}$
