@@ -9,6 +9,7 @@
 
 \usepackage{braket}
 \usepackage{caption}
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
 \usepackage{siunitx}
 
 \title{Data Review}
@@ -72,7 +73,7 @@
                 \item SAPT0: $n = 2, k = l = 0$, no intramonomer correlation, $O(N^5)$ cost
                 \item Many-body SAPT: $k+l \geq 2$, $O(N^6)$ or higher cost
                 \item SAPT(DFT): Use Kohn-Sham operator $K_{A,B}$ instead of Fock operator $F_{A,B}$, $O(N^5)$ cost
-                \item Primitive SAPT(DFT) works well on 1st-order terms, but not 2nd-order terms (especially dispersion). Needs orbital response for them
+                \item Primitive SAPT(DFT) works well on 1st-order terms, but not 2nd-order terms (especially dispersion). Needs orbital response for these terms
             \end{itemize}
         \end{frame}
 
@@ -119,8 +120,9 @@
 
         \begin{frame}{Equation for $E_{disp}^{(2)}$}
             \begin{itemize}
-                \item $O(N^5)$ scaling is limited to forming  $\mathbf{K}_1$, $\mathbf{K}_2$ and $\mathbf{K}_{21}$
-                \item Separates nontrivial and trivial parts of the code, also highly reduces need of disk I/O operations
+                \item Coupled Kohn-Sham (CKS) FDDS reflects correct response properties of electrons
+                \item $O(N^5)$ scaling is limited to forming  $\mathbf{K}_1$, $\mathbf{K}_2$, $\mathbf{K}_{21}$ and $\mathbf{K}'_2$
+                \item Separates ``nontrivial'' and ``trivial'' parts of the code, also highly reduces need of disk I/O operations
                 \item $E_{disp}^{(2)}$ from coupled FDDS:
                 \begin{eqnarray}
                     \nonumber
@@ -132,10 +134,10 @@
         
         \begin{frame}{Exchange-Dispersion Term}
             \begin{itemize}
-                \item Coupled exchange-dispersion requires storing 4-index tensors on disk
+                \item Explicit coupled exchange-dispersion not trivial to implement; currently working on this
                 \item Estimate from scaling uncoupled exchange-dispersion; Scale with ratio in dispersion term or with pre-fitted (with S22$\times$5) fixed factor 
                 $$\tilde{E}^{(2)}_{exch-disp,r} = E^{(2)}_{exch-disp,u} \cdot \frac{E^{(2)}_{disp,r}}{E^{(2)}_{disp,u}}$$
-                $$\tilde{E}^{(2)}_{exch-disp,r} = \alpha \cdot E^{(2)}_{exch-disp,u} (\alpha = 0.686361)$$
+                $$\tilde{E}^{(2)}_{exch-disp,r} = \alpha \cdot E^{(2)}_{exch-disp,u} (\alpha = 0.686)$$
                 \item The value above is fitted from $E_{exch-disp,u}^{(2)}$ with LHF orbitals
                 \item Non-LHF orbitals have greater o-v gaps and smaller $E_{disp,u}^{(2)}$, needs to re-fit with non-LHF results
             \end{itemize}
@@ -145,7 +147,7 @@
             \begin{figure}
             \centering
             \includegraphics[width=0.8\textwidth]{S66-terms.png}
-            \caption{Hybrid vs. LHF values for each term for S66 data set ($E_{elst}^{(1)}$, $E_{exch}^{(1)}$, $E_{ind}^{(2)}$, $E_{exch-ind}^{(2)}$, $E_{disp,r}^{(2)}$, $E_{disp,u}^{(2)}$, $E_{exch-disp,u}^{(2)}$)} 
+            \caption{Hybrid vs. LHF values in kcal/mol for each term for S66 data set: (a) $E_{elst}^{(1)}$, (b) $E_{exch}^{(1)}$, (c) $E_{ind}^{(2)}$, (d) $E_{exch-ind}^{(2)}$, (e) $E_{disp,r}^{(2)}$, (f) $E_{disp,u}^{(2)}$, (g) $E_{exch-disp,u}^{(2)}$} 
             \end{figure}        
         \end{frame}
 
