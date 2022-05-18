@@ -33,7 +33,7 @@
                 \end{itemize}
             \item Symmetry-Adapted Perturbation Theory
             \begin{itemize}
-                \item Can give details about different types of interactions; important in understanding their nature 
+                \item Can give details about interactions (electrostatic, induction/polarization, exchange repulsion, London dispersion components); important in understanding their nature
                 \item Not as cheap as DFT-D3
                 \item SAPT0 is somewhat cheap, but does not include intramonomer correlation
             \end{itemize}
@@ -52,7 +52,7 @@
 
     \begin{frame}{Three-Body Interaction}
         \begin{itemize}
-            \item Crucial in computing lattice energies
+            \item Crucial in computing high accuracy lattice energies (5\% for benzene)
             \item DFT-D3 does not perform well for three-body interaction
             \item MP2.5 scales as $O(N^6)$, MP2 is $O(N^5)$ but lacks three-body dispersion
             \item Three-body dispersion can be implemented with SAPT(DFT) in $O(N^5)$
@@ -120,9 +120,8 @@
         \begin{frame}{Equation for $E_{disp}^{(2)}$}
             \begin{itemize}
                 \item Coupled Kohn-Sham (CKS) FDDS reflects correct response properties of electrons
-                \item $O(N^5)$ scaling is limited to forming  $\mathbf{K}_1$, $\mathbf{K}_2$, $\mathbf{K}_{21}$ and $\mathbf{K}'_2$
-                \item Separates ``nontrivial'' and ``trivial'' parts of the code, also highly reduces need of disk I/O operations
-                \item $E_{disp}^{(2)}$ from coupled FDDS:
+                \item $O(N^5)$ scaling is limited to forming $\mathbf{K}_1$, $\mathbf{K}_2$, $\mathbf{K}_{21}$ and $\mathbf{K}'_2$. These quantities are frequency-dependent, but could store frequency-independent intermediates from the $O(N^5)$ contractions on disk, and the frequency-dependent contractions are only $O(N^4)$
+                \item $E_{disp}^{(2)}$ from coupled FDDS: (Integration is approximated by Gauss-Legendre quadrature)
                 \begin{eqnarray}
                     \nonumber
                     E_{disp,r}^{(2)} &=& -\frac{1}{2\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B \\ \nonumber
@@ -214,6 +213,16 @@
         \end{frame}
 
         \begin{frame}{Timing Performance}
+            \begin{itemize}
+                \item Analyzing breakdown wall times for subroutines in SAPT(DFT) for a few systems with 500--3000 basis functions
+                \item Using Intel Core i7-6800K processor with 6 cores for Watson-Crick adenine-thymine complex and RDX dimer 
+                \item Using Intel Core i9-10980XE processor with 18 cores for C$_{60}$--buckycatcher ($N_{bf} = 3012$), completed entire calculation in 4.03 days
+                \item Contribution of $O(N^5)$ dispersion terms not dominant for smaller systems
+                \item Cost of SCF (HF/DFT) calculations and induction terms are usually non-negligible 
+            \end{itemize}
+        \end{frame}
+
+        \begin{frame}{Timing Systems}
             \begin{figure}
                 \centering
                 \includegraphics[width=0.8\textwidth]{timingsystems.png}
@@ -244,7 +253,7 @@
                 \centering
                 \begin{tabular}{c c c}
                     \hline
-                    Subroutine & Hybrid time (h) & LHF time (h) \\ \hline
+                    Subroutine & Psi4 hybrid time (h) & Molpro LHF time (h) \\ \hline
                     Delta HF & 0.96 & N/A \\ 
                     DFT & 0.45 & 2.29 \\ 
                     xc kernel & 0.08 & 4.17 \\ 
@@ -257,12 +266,10 @@
         \end{frame}
 
         \begin{frame}{C$_{60}$--Buckycatcher Complex}
-            \begin{itemize}
-                \item $N_{bf} = 3012, N_{aux} = 9284$ with aug-cc-pVDZ basis set
-                \item Using Intel i9-10980XE processor with 18 cores, completed entire calculation in 4.03 days
-                \item 42.7 hours for $E_{disp}^{(2)}$; 20.1 hours for the $O(N^5)$ subroutines
-                \item Cost of DFT and $E_{ind}^{(2)}$ still somewhat significant
-            \end{itemize}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\textwidth]{C60_buckycatcher.png}
+            \end{figure}
         \end{frame}
 
 \section{Three-Body FDDS Dispersion}
@@ -316,8 +323,8 @@
                     & & \frac{1}{|\mathbf{r}_A-\mathbf{r}_B|} \frac{1}{|\mathbf{r}'_A-\mathbf{r}_C|} \frac{1}{|\mathbf{r}'_B-\mathbf{r}'_C|} \\ \nonumber
                     & & \chi^A\left(\mathbf{r}_A,\mathbf{r}'_A|i\omega\right)\chi^B\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)\chi^C\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)
                 \end{eqnarray}
-                \item Transforming into density-fitting basis:
-                $$E_{disp,r}^{(3)} = \int_0^\infty d\omega \mathrm{Tr}\left(\mathbf{S}^{-1}\boldsymbol{\chi}_A\mathbf{S}^{-1}\boldsymbol{\chi}_B\mathbf{S}^{-1}\boldsymbol{\chi}_C\right)$$
+                \item Transform from position space into density-fitting auxiliary basis space:
+                $$E_{disp,r}^{(3)} = \int_0^\infty d\omega\,\mathrm{Tr}\left(\mathbf{S}^{-1}\boldsymbol{\chi}^A\mathbf{S}^{-1}\boldsymbol{\chi}^B\mathbf{S}^{-1}\boldsymbol{\chi}^C\right)$$
             \end{itemize}
         \end{frame}
 
