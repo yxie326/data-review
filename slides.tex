@@ -125,7 +125,7 @@
                 \item $E_{disp}^{(2)}$ from coupled FDDS:
                 \begin{eqnarray}
                     \nonumber
-                    E_{disp,u}^{(2)} &=& -\frac{1}{2\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B \\ \nonumber
+                    E_{disp,r}^{(2)} &=& -\frac{1}{2\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B \\ \nonumber
                     & & \frac{1}{|\mathbf{r}_A-\mathbf{r}_B|} \frac{1}{|\mathbf{r}'_A-\mathbf{r}'_B|} \chi^A\left(\mathbf{r}_A,\mathbf{r}'_A|i\omega\right)\chi^B\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)
                 \end{eqnarray}
             \end{itemize}
@@ -148,26 +148,6 @@
             \includegraphics[width=0.8\textwidth]{S66-terms.png}
             \caption{Hybrid vs. LHF values in kcal/mol for each term for S66 data set: (a) $E_{elst}^{(1)}$, (b) $E_{exch}^{(1)}$, (c) $E_{ind}^{(2)}$, (d) $E_{exch-ind}^{(2)}$, (e) $E_{disp,r}^{(2)}$, (f) $E_{disp,u}^{(2)}$, (g) $E_{exch-disp,u}^{(2)}$} 
             \end{figure}        
-        \end{frame}
-
-        \begin{frame}{GRAC}
-            \begin{itemize}
-                \item (Hybrid-)GGA functionals does not have correct long-range behavior $v_{xc}(r) \rightarrow -1/r + (I_p + \epsilon_{\text{HOMO}})$
-                \item Underestimates o-v gap as a consequence
-                \item Functionals like LB94 have correct asymptotic behavior, but poor in bulk region
-                \item Using gradient-regulated asymptotic correction (GRAC) scheme to connect PBE0 and LB94 with the switching function $f[g(\boldsymbol{r})]$:
-                $$v_{xc}^{\text{GRAC}} = \left\{1-f[g(\boldsymbol{r})]\right\}v_{xc}^{\text{PBE0}} + f[g(\boldsymbol{r})] v_{xc}^{\text{LB94}}$$
-                $$f[g(\boldsymbol{r})] = \left( 1+e^{-\alpha [g(\boldsymbol{r}) - \beta]} \right)^{-1}$$
-                $$g(\boldsymbol{r}) = \frac{\left| \nabla \rho (\boldsymbol{r}) \right|}{\rho^{4/3}(\boldsymbol{r})}$$
-            \end{itemize}
-        \end{frame}        
-        
-        \begin{frame}{GRAC \& Long-Range Behavior}
-            \begin{figure}
-            \centering
-            \includegraphics[width=0.65\textwidth]{GRAC.png}
-            \caption{Radial densities $r^2\rho(r)$ of Ne atom (right) and errors compared to CCSD(T) density (left) for various xc potentials.\footnote{G. Jansen, WIREs Comput. Mol. Sci. \textbf{4}, 127 (2014).}} 
-            \end{figure}
         \end{frame}
 
     \subsection{Results}
@@ -256,10 +236,24 @@
         \end{frame}
 
         \begin{frame}{Comparison with LHF Approach}
-            \begin{figure}
+            \begin{itemize}
+                \item Comparison of subrountine wall times between hyybrid xc kernel approach implemented in Psi4 1.4 and LHF approach implemented in Molpro 2019.2
+                \item Some subroutines does not exist or not included by default in the Molpro DFT-SAPT program
+            \end{itemize}
+            \begin{table}
                 \centering
-                \includegraphics[width=0.8\textwidth]{RDX_LHF.png}
-            \end{figure}
+                \begin{tabular}{c c c}
+                    \hline
+                    Subroutine & Hybrid time (h) & LHF time (h) \\ \hline
+                    Delta HF & 0.96 & N/A \\ 
+                    DFT & 0.45 & 2.29 \\ 
+                    xc kernel & 0.08 & 4.17 \\ 
+                    $O(N^5)$ objects formation & 2.35 & N/A \\ 
+                    $E^{(2)}_{disp}$ time integration & 0.37 & 3.59 \\ 
+                    $E^{(2)}_{exch-disp}$ & 0.41 & 1.99 \\ 
+                    Total & 5.03 & 12.80 \\ \hline
+                \end{tabular}
+            \end{table}
         \end{frame}
 
         \begin{frame}{C$_{60}$--Buckycatcher Complex}
@@ -308,6 +302,22 @@
                 \item Aiming to serve as a "three-body version" of S22$\times$5/S66$\times$8
                 \item Distance: Geometry mean of 3 pairwise closest contact distance
                 \item Alignment: Angles of the COM triangle; mainly looking at the greatest angle
+            \end{itemize}
+        \end{frame}
+
+    \subsection{Theory}
+
+        \begin{frame}{Three-Body Dispersion}
+            \begin{itemize}
+                \item Three-body dispersion energy in terms of FDDS, analogous to the two-body dispersion:
+                \begin{eqnarray}
+                    \nonumber
+                    E_{disp,r}^{(3)} &=& -\frac{1}{\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B d\mathbf{r}_C d\mathbf{r}'_C \\ \nonumber
+                    & & \frac{1}{|\mathbf{r}_A-\mathbf{r}_B|} \frac{1}{|\mathbf{r}'_A-\mathbf{r}_C|} \frac{1}{|\mathbf{r}'_B-\mathbf{r}'_C|} \\ \nonumber
+                    & & \chi^A\left(\mathbf{r}_A,\mathbf{r}'_A|i\omega\right)\chi^B\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)\chi^C\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)
+                \end{eqnarray}
+                \item Transforming into density-fitting basis:
+                $$E_{disp,r}^{(3)} = \int_0^\infty d\omega \mathrm{Tr}\left(\mathbf{S}^{-1}\boldsymbol{\chi}_A\mathbf{S}^{-1}\boldsymbol{\chi}_B\mathbf{S}^{-1}\boldsymbol{\chi}_C\right)$$
             \end{itemize}
         \end{frame}
 
@@ -371,5 +381,26 @@
                 \includegraphics[width=0.7\textwidth]{benzene_FDDS_log.png}
             \end{figure}
         \end{frame}
+
+        %\begin{frame}{GRAC}
+        %    \begin{itemize}
+        %        \item (Hybrid-)GGA functionals does not have correct long-range behavior $v_{xc}(r) \rightarrow -1/r + (I_p + \epsilon_{\text{HOMO}})$
+        %        \item Underestimates o-v gap as a consequence
+        %        \item Functionals like LB94 have correct asymptotic behavior, but poor in bulk region
+        %        \item Using gradient-regulated asymptotic correction (GRAC) scheme to connect PBE0 and LB94 with the switching function $f[g(\boldsymbol{r})]$:
+        %        $$v_{xc}^{\text{GRAC}} = \left\{1-f[g(\boldsymbol{r})]\right\}v_{xc}^{\text{PBE0}} + f[g(\boldsymbol{r})] v_{xc}^{\text{LB94}}$$
+        %        $$f[g(\boldsymbol{r})] = \left( 1+e^{-\alpha [g(\boldsymbol{r}) - \beta]} \right)^{-1}$$
+        %        $$g(\boldsymbol{r}) = \frac{\left| \nabla \rho (\boldsymbol{r}) \right|}{\rho^{4/3}(\boldsymbol{r})}$$
+        %    \end{itemize}
+        %\end{frame}        
+        %
+        %\begin{frame}{GRAC \& Long-Range Behavior}
+        %    \begin{figure}
+        %    \centering
+        %    \includegraphics[width=0.65\textwidth]{GRAC.png}
+        %    \caption{Radial densities $r^2\rho(r)$ of Ne atom (right) and errors compared to CCSD(T) density (left) for various xc potentials.\footnote{G. Jansen, WIREs Comput. Mol. Sci. \textbf{4}, 127 (2014).}} 
+        %    \end{figure}
+        %\end{frame}
+
 
 \end{document}
