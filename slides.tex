@@ -11,446 +11,360 @@
 \usepackage[labelformat=empty]{caption}
 \usepackage{siunitx}
 
-\title{Data Review}
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+\title{Implementation and Application of Density Functional Theory based Symmetry-Adapted \linebreak
+Perturbation Theory for Dimers, Trimers and Molecular Crystals}
 
 \author{Yi Xie}
-\GTtoc{Table of contents}
+\date{July 25, 2022}
 
 \begin{document}
 
 \GTtitle
 
-\section{Overview}
+\section{SAPT(DFT): Background}
+
+    \begin{frame}{Noncovalent Interaction}
+        \begin{itemize}
+            \item Phase transition, stability of crystal structure
+            \item Drug binding, DNA/RNA/protein structure
+            \item Many-body Expansion for the energy of complex system:
+                $$E = \sum_A E_A + \sum_{AB} E^{\rm{int,2}}_{AB} + \sum_{ABC} E^{\rm{int,3}}_{ABC} +  \cdots$$
+        \end{itemize} 
+    \end{frame}
 
     \begin{frame}{Intermolecular Energies}
         \begin{itemize}
             \item Supermolecular approach 
-                $$E_{int} = E_{AB} - E_A - E_B$$
-                \begin{itemize}
-                    \item Straightforward, but cannot separate different types of interactions
-                    \item Can adopt to different electronic structure methods
-                    \item DFT-D3 with proper functional can be both cheap and accurate
-                \end{itemize}
-            \item Symmetry-Adapted Perturbation Theory
-            \begin{itemize}
-                \item Can give details about interactions (electrostatic, induction/polarization, exchange repulsion, London dispersion components); important in understanding their nature
-                \item Not as cheap as DFT-D3
-                \item SAPT0 is somewhat cheap, but does not include intramonomer correlation
-            \end{itemize}
+                $$E^{\rm{int,2}}_{AB} = E_{AB} - E_A - E_B$$
+                $$E^{\rm{int,3}}_{ABC} = E_{ABC} - E_{AB} - E_{AC} - E_{BC} + E_A + E_B + E_C$$
+            \item Symmetry-Adapted Perturbation Theory (SAPT)
+                $$E^{\rm{int,2}} = E_{\rm{elst}}^{(1)} + E_{\rm{exch}}^{(1)} + E_{\rm{ind}}^{(2)} + E_{\rm{exch-ind}}^{(2)} + E_{\rm{disp}}^{(2)} + E_{\rm{exch-disp}}^{(2)}$$
         \end{itemize}
     \end{frame}
 
     \begin{frame}{SAPT(DFT)}
         \begin{itemize}
-            \item Attempt to inlude intramonomer correlation in a cheap way
-            \item Replaces HF orbitals with KS orbitals
-            \item Needs to consider orbital response for dispersion terms
-            \item Exchange-dispersion term needs to be estimated from scaling 
-            \item Investigate the accuracy and efficiency of SAPT(DFT)
-        \end{itemize}
-    \end{frame}
-
-    \begin{frame}{Three-Body Interaction}
-        \begin{itemize}
-            \item Crucial in computing high accuracy lattice energies (5\% for benzene)
-            \item DFT-D3 does not perform well for three-body interaction
-            \item MP2.5 scales as $O(N^6)$, MP2 is $O(N^5)$ but lacks three-body dispersion
-            \item Three-body dispersion can be implemented with SAPT(DFT) in $O(N^5)$
-            \item Combine MP2 with SAPT(DFT) dispersion to model three-body interaction  
-        \end{itemize}   
-    \end{frame}
-
-\section{SAPT(DFT) Implementation}
-    
-    \subsection{Theory}
-             
-        \begin{frame}{Idea of SAPT(DFT)}
-            \begin{itemize}
-                \item SAPT energy in orders of interaction and fluctuation potentials; $n$ denotes order in $V$ and $k,l$ for $W_A, W_B$
-                $$H = F_A + F_B + V + W_A + W_B$$
-                $$E_{int} = \sum_{n=1}^\infty \sum_{k=0}^\infty \sum_{l=0}^\infty \left(E_{pol}^{(nkl)} + E_{exch}^{(nkl)}\right)$$
-                \item SAPT0: $n = 2, k = l = 0$, no intramonomer correlation, $O(N^5)$ cost
-                \item Many-body SAPT: $k+l \geq 2$, $O(N^6)$ or higher cost
-                \item SAPT(DFT): Use Kohn-Sham operator $K_{A,B}$ instead of Fock operator $F_{A,B}$, $O(N^5)$ cost
-                \item Primitive SAPT(DFT) works well on 1st-order terms, but not 2nd-order terms (especially dispersion). Needs orbital response for these terms
-            \end{itemize}
-        \end{frame}
-
-        \begin{frame}{Coupled Dispersion Energy}
-            \begin{itemize}
-                \item Uncoupled dispersion energy in terms of frequency-dependent density susceptibility (FDDS):
+            \item Hamiltonian partitioning:
+                $$H = F_A + F_B + V_{AB} + W_A + W_B$$ 
+                $$H = K_A + K_B + V_{AB}$$ 
+            \item ``Uncoupled'' sum-over-states approximation of $E_{\rm{disp}}^{(2)}$ and in terms of frequency-dependent density susceptibility (FDDS):
                 \begin{eqnarray}
                     \nonumber
-                    E_{disp,u}^{(2)} &=& -4\sum_{ia \in A,jb \in B} \frac{\left|\left(ia|jb\right)\right|^2}{\epsilon_{ij}^{ab}}\\ \nonumber
+                    E_{\rm{disp,u}}^{(2)} &=& -4\sum_{ar \in A,bs \in B} \frac{\left|\left(ar|bs\right)\right|^2}{\epsilon_{ab}^{rs}}\\ \nonumber
                     &=& -\frac{1}{2\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B \\ \nonumber
                     & & \frac{1}{|\mathbf{r}_A-\mathbf{r}_B|} \frac{1}{|\mathbf{r}'_A-\mathbf{r}'_B|} \chi_0^A\left(\mathbf{r}_A,\mathbf{r}'_A|i\omega\right)\chi_0^B\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)
                 \end{eqnarray}
-                \item Kohn-Sham DFT constructs a fictitious system of non-interacting particles, which reproduces the density and energy of the real electronic system
-                \item Kohn-Sham FDDS does not reflect the correct response properties of the electronic system
-            \end{itemize}
-        \end{frame}
+        \end{itemize}
+    \end{frame}
 
-        \begin{frame}{Dispersion Term}
-            \begin{itemize}
-                \item Coupled FDDS from solving TDDFT equations\footnote{M. Pito{\v{n}}{\'{a}}k and A. Hesselmann, J. Chem. Theory Comput. \textbf{6}, 168 (2010).}:
-                $$\boldsymbol{\chi} = \boldsymbol{\chi}_0 + \boldsymbol{\chi}_0 \mathbf{S}^{-1} \mathbf{W} \left( \mathbf{S} - \boldsymbol{\chi}_0 \mathbf{S}^{-1} \mathbf{W} \right)^{-1} \boldsymbol{\chi}_0$$
-                \item $\mathbf{S}$ and $\mathbf{W}$ corresponds to Coulomb metric and xc kernel
-                \item Pure ALDA kernel good for pure GGA functional, but not for hybrid functional 
-                \item Exact exchange in $v_{xc} \rightarrow$ increased $\epsilon_{ij}^{ab} \rightarrow$ decreased $E_{disp}^{(2)}$ 
-                $$E_{disp,u}^{(2)} = -4\sum_{ia \in A,jb \in B} \frac{\left|\left(ia|jb\right)\right|^2}{\epsilon_{ij}^{ab}}$$
-                \item Hybrid ALDA kernel to compensate, or localized HF (LHF) exchange to avoid increase in $\epsilon_{ij}^{ab}$
-                \item Reformulating solution of hybrid TDDFT equations\footnote{R. Bukowski et al., Chem. Phys. Lett. \textbf{414}, 111 (2005)} in density-fitting basis on next slide
-            \end{itemize}            
-        \end{frame}
+    \begin{frame}{Uncoupled $E_{\rm{disp}}^{(2)}$}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.5\textwidth]{uncoupled.png}
+            \caption{Mean ($\delta$) and mean absolute ($\epsilon$) percentage deviations of uncoupled (u) and coupled (c) $E_{\rm{disp}}^{(2)}$ from SAPT2+ results.\blfootnote{A. He{\ss}elmann and G. Jansen, Chem. Phys. Lett. \textbf{367}, 778 (2003).}}
+        \end{figure}
+    \end{frame}
 
-        \begin{frame}{Coupled FDDS with hybrid kernel}
-            $$\boldsymbol{\chi} = \boldsymbol{\chi}_0' + \left( \boldsymbol{\chi}_0' \mathbf{S}^{-1} \mathbf{W} + \mathbf{K}' \right) \left[ \mathbf{S} - \left( \boldsymbol{\chi}_0' \mathbf{S}^{-1} \mathbf{W} + \mathbf{K}' \right) \right]^{-1} \boldsymbol{\chi}_0'$$
-            $$\mathbf{K}' = \left[ - \xi \mathbf{K}_1 \left( \lambda d\right) - \xi \mathbf{K}_2 \left( \lambda d\right) + \xi^2 \mathbf{K}_{21} \left( \lambda \right) \right] \left( \mathbf{R}^T \right)^{-1} \mathbf{S}$$
-            $$[\mathbf{K}_1 (\lambda d)]_{PQ} = (P|ar) \lambda_{ar} d_{ar} [(aa'|rr')+(ar'|a'r)] (a'r'|\mathbf{Q}|Q)$$
-            $$[\mathbf{K}_2 (\lambda d)]_{PQ} = (P|ar) \lambda_{ar} d_{ar} [(aa'|rr')-(ar'|a'r)] (a'r'|\mathbf{Q}|Q)$$
+    \begin{frame}{Coupled $E_{\rm{disp}}^{(2)}$}
+        \begin{itemize}
+            \item Replacing uncoupled FDDS with coupled FDDS, solved from the coupled Kohn--Sham (CKS) TDDFT equation:\blfootnote{M. Pito{\v{n}}{\'{a}}k and A. Hesselmann, J. Chem. Theory Comput. \textbf{6}, 168 (2010).}
+            $$\boldsymbol{\chi} = \boldsymbol{\chi}_0 + \boldsymbol{\chi}_0 \mathbf{S}^{-1} \mathbf{W} \left( \mathbf{S} - \boldsymbol{\chi}_0 \mathbf{S}^{-1} \mathbf{W} \right)^{-1} \boldsymbol{\chi}_0$$
+            \item Exchange-correlation kernel term in $\mathbf{W}$ approximated by adiabatic local-density approximation (ALDA) kernel:
             \begin{eqnarray}
                 \nonumber
-                [\mathbf{K}_{21} (\lambda)]_{PQ} &=& (P|ar) \lambda_{ar} [(aa''|rr'')-(ar''|a''r)] \\ \nonumber
-                & & [(a'a''|r'r'')-(a'r''|a''r')] (a'r'|\mathbf{Q}|Q)
+                W_{PQ} &=& \left( P | r_{12}^{-1} | Q \right) + \left( P | f_{\rm{xc}} | Q \right) \\ \nonumber
+                & \approx & \left( P | r_{12}^{-1} | Q \right) + \left( P | f_{\rm{xc}}^{\rm{ALDA}} | Q \right)
             \end{eqnarray}
-            $$[\mathbf{K}'_2 (\lambda)]_{PQ} = (P|ar) \lambda_{ar} [(aa'|rr')-(ar'|a'r)] (a'r'|Q)$$
-            $$\boldsymbol{\chi}_0' = \boldsymbol{\chi}_0 - \xi \mathbf{K}_2 \left( \lambda \right)$$
-            $$(ar|Q) = (ar|\mathbf{Q}|P)(P|\mathbf{R}|Q)$$
-        \end{frame}
+        \end{itemize}
+    \end{frame}
 
-        \begin{frame}{Equation for $E_{disp}^{(2)}$}
+    \begin{frame}{Hybrid Functional}
+        \begin{itemize} 
+            \item Local Hartree--Fock (LHF) approach  
             \begin{itemize}
-                \item Coupled Kohn-Sham (CKS) FDDS reflects correct response properties of electrons
-                \item $O(N^5)$ scaling is limited to forming $\mathbf{K}_1$, $\mathbf{K}_2$, $\mathbf{K}_{21}$ and $\mathbf{K}'_2$. These quantities are frequency-dependent, but could store frequency-independent intermediates from the $O(N^5)$ contractions on disk, and the frequency-dependent contractions are only $O(N^4)$
-                \item $E_{disp}^{(2)}$ from coupled FDDS: (Integration is approximated by Gauss-Legendre quadrature)
-                \begin{eqnarray}
-                    \nonumber
-                    E_{disp,r}^{(2)} &=& -\frac{1}{2\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B \\ \nonumber
-                    & & \frac{1}{|\mathbf{r}_A-\mathbf{r}_B|} \frac{1}{|\mathbf{r}'_A-\mathbf{r}'_B|} \chi^A\left(\mathbf{r}_A,\mathbf{r}'_A|i\omega\right)\chi^B\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)
-                \end{eqnarray}
+                \item Computing LHF potential in each KS SCF iteration
+                \item $O(N^4)$ with very large constant factor
+                \item Different set of KS orbitals with smaller occupied--virtual gap
             \end{itemize}
-        \end{frame}
+            \item Hybrid ALDA kernel
+            \begin{itemize}
+                \item Mixing CHF and CKS equations to solve for FDDS
+                \item CKS involves integral of form $(ar|a'r')$, $O(N^4)$ with density fitting
+                \item CHF involves $(aa'|rr')$ and $(ar'|a'r)$, $O(N^5)$
+            \end{itemize}
+        \end{itemize} 
+    \end{frame}
         
-        \begin{frame}{Exchange-Dispersion Term}
-            \begin{itemize}
-                \item Explicit coupled exchange-dispersion not trivial to implement; currently working on this
-                \item Estimate from scaling uncoupled exchange-dispersion; Scale with ratio in dispersion term or with pre-fitted (with S22$\times$5) fixed factor 
-                $$\tilde{E}^{(2)}_{exch-disp,r} = E^{(2)}_{exch-disp,u} \cdot \frac{E^{(2)}_{disp,r}}{E^{(2)}_{disp,u}}$$
-                $$\tilde{E}^{(2)}_{exch-disp,r} = \alpha \cdot E^{(2)}_{exch-disp,u} (\alpha = 0.686)$$
-                \item The value above is fitted from $E_{exch-disp,u}^{(2)}$ with LHF orbitals
-                \item Non-LHF orbitals have greater o-v gaps and smaller $E_{disp,u}^{(2)}$, needs to re-fit with non-LHF results
-            \end{itemize}
-        \end{frame}
+    \begin{frame}{Coupled $E_{\rm{exch-disp}}^{(2)}$}
+        \begin{itemize}
+            \item Scaling from scaling uncoupled $E_{\rm{exch-disp}}^{(2)}$
+            $$\tilde{E}^{(2)}_{exch-disp,r} = E^{(2)}_{exch-disp,u} \cdot \frac{E^{(2)}_{disp,r}}{E^{(2)}_{disp,u}}$$
+            \item Fixed scaling factor from fitting S22$\times$5\blfootnote{A. He{\ss}elmann and T. Korona, J. Chem. Phys. \textbf{141}, 094107 (2014).}
+            $$\tilde{E}^{(2)}_{exch-disp,r} = \alpha \cdot E^{(2)}_{exch-disp,u} (\alpha = 0.686)$$
+            \item Value of $\alpha$ above fitted from $E_{exch-disp,u}^{(2)}$ \textit{with LHF orbitals}
+        \end{itemize}
+    \end{frame}
 
-        \begin{frame}{LHF vs non-LHF orbitals}
-            \begin{figure}
+    \begin{frame}{S22 Dimer Set}
+        \begin{figure}
             \centering
-            \includegraphics[width=0.8\textwidth]{S66-terms.png}
-            \caption{Hybrid vs. LHF values in kcal/mol for each term for S66 data set: (a) $E_{elst}^{(1)}$, (b) $E_{exch}^{(1)}$, (c) $E_{ind}^{(2)}$, (d) $E_{exch-ind}^{(2)}$, (e) $E_{disp,r}^{(2)}$, (f) $E_{disp,u}^{(2)}$, (g) $E_{exch-disp,u}^{(2)}$} 
-            \end{figure}        
-        \end{frame}
+            \includegraphics[width=0.8\textwidth]{S22.png}
+        \end{figure}
+    \end{frame}
 
-    \subsection{Results}
-    
-        \begin{frame}{Exchange-Dispersion Refitting}
-            \begin{itemize}
-                \item Need to fit the uncoupled $E_{exch-disp,r}^{(2)}$ with non-LHF orbitals on the coupled LHF orbital values (implemented in Molpro)
-                \item Assuming coupled LHF and non-LHF orbital $E_{exch-disp,r}^{(2)}$ from the behavior of $E_{disp,r}^{(2)}$
-                \item Exchange-related components depend heavily on distance between monomers, sets like S22$\times$5 and S66$\times$8 would be preferred (S22/S66 with various non-equilibrium intermolecular distances)
-                \item Determine the scaling factor with S22$\times$5, validate with S66$\times$8 
-            \end{itemize}
-        \end{frame}
+\section{SAPT(DFT): Implementation}
 
-        \begin{frame}{S22 dimer set}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{S22.png}
-            \end{figure}
-        \end{frame}
-
-        \begin{frame}{S22$\times$5 Fitting Results}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.55\textwidth]{S22x5-exchdisp.png}
-            \end{figure}   
-        \end{frame}
-
-        \begin{frame}{S66$\times$8 Validating Results}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.55\textwidth]{S66x8-exchdisp.png}
-            \end{figure}  
-        \end{frame}
-
-        \begin{frame}{Termwise results}
-            \begin{itemize}
-                \item Compared the SAPT(DFT)/aug-cc-pVTZ results of our code to SAPT(CCSD)/aug-cc-pVTZ results from Korona S2\footnote{T. Korona, Mol. Phys. \textbf{111}, 3705 (2013).}
-                \item Also comparing the results for S66 with SAPT2+3(CCD)$\delta$MP2/aug-cc-pVTZ as reference. Also added SAPT0/aug-cc-pVDZ, SAPT2+/aug-cc-pVDZ and SAPT2+(3)$\delta$MP2/aug-cc-pVTZ into comparison as side-reference. 
-                \item Errors of each system with respect to reference shown as vertical lines
-                \item Mean absolute error (MAE) and mean unsigned relative error (MURE) listed for S2. MAE indicated by black box in the diagram
-                \item Color scheme for S66 systems: Hydrogen-bonded (HB, red), mixed-influence (MX, green), dispersion-dominated (DD, blue)
-            \end{itemize}
-        \end{frame}
-
-        \begin{frame}{Korona S2 Results}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{S2_1.png}
-            \end{figure}  
-        \end{frame}
-
-        \begin{frame}{Korona S2 Results}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{S2_2.png}
-            \end{figure}  
-        \end{frame}
-
-        \begin{frame}{S66 Results}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{S66_1.png}
-            \end{figure}  
-        \end{frame}
-
-        \begin{frame}{S66 Results}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{S66_2.png}
-            \end{figure}  
-        \end{frame}
-
-        \begin{frame}{Timing Performance}
-            \begin{itemize}
-                \item Analyzing breakdown wall times for subroutines in SAPT(DFT) for a few systems with 500--3000 basis functions
-                \item Using Intel Core i7-6800K processor with 6 cores for Watson-Crick adenine-thymine complex and RDX dimer 
-                \item Using Intel Core i9-10980XE processor with 18 cores for C$_{60}$--buckycatcher ($N_{bf} = 3012$), completed entire calculation in 4.03 days
-                \item Contribution of $O(N^5)$ dispersion terms not dominant for smaller systems
-                \item Cost of SCF (HF/DFT) calculations and induction terms are usually non-negligible 
-            \end{itemize}
-        \end{frame}
-
-        \begin{frame}{Timing Systems}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{timingsystems.png}
-                \caption{Dimer systems for timing: (a) Watson-Crick adenine-thymine complex, (b) RDX dimer, (c) C$_{60}$--buckycather complex.}
-            \end{figure}
-        \end{frame}
-
-        \begin{frame}{Watson-Crick Adenine-Thymine}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{wcat.png}
-            \end{figure}
-        \end{frame}
-
-        \begin{frame}{RDX Dimer}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{RDX.png}
-            \end{figure}
-        \end{frame}
-
-        \begin{frame}{Comparison with LHF Approach}
-            \begin{itemize}
-                \item Comparison of subrountine wall times between hyybrid xc kernel approach implemented in Psi4 1.4 and LHF approach implemented in Molpro 2019.2
-                \item Some subroutines does not exist or not included by default in the Molpro DFT-SAPT program
-            \end{itemize}
-            \begin{table}
-                \centering
-                \begin{tabular}{c c c}
-                    \hline
-                    Subroutine & Psi4 hybrid time (h) & Molpro LHF time (h) \\ \hline
-                    Delta HF & 0.96 & N/A \\ 
-                    DFT & 0.45 & 2.29 \\ 
-                    xc kernel & 0.08 & 4.17 \\ 
-                    $O(N^5)$ objects formation & 2.35 & N/A \\ 
-                    $E^{(2)}_{disp}$ time integration & 0.37 & 3.59 \\ 
-                    $E^{(2)}_{exch-disp}$ & 0.41 & 1.99 \\ 
-                    Total & 5.03 & 12.80 \\ \hline
-                \end{tabular}
-            \end{table}
-        \end{frame}
-
-        \begin{frame}{C$_{60}$--Buckycatcher Complex}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.6\textwidth]{C60_buckycatcher.png}
-            \end{figure}
-        \end{frame}
-
-\section{Three-Body FDDS Dispersion}
-
-    \subsection{Background}
-    
-        \begin{frame}{3B-69 Benchmark Set}
-            \begin{itemize}
-                \item Benchmark set for 3-body interaction energies\footnote{J. \v{R}ez\'{a}\v{c} et al., J. Chem. Theory Comput. \textbf{11}, 3065 (2015).}
-                \item 69 trimers extracted from 23 different molecular crystal structures (3 each)
-                \item Used focal point approach to obtain CCSD(T) (and other wavefunction method) energies
-                $$E = E^{\rm{HF}}(\rm{aQZ}) + \Delta E^{\rm{MP2}}(\rm{aTZ/aQZ}) + \Delta E^{\rm{CCSD(T)}}(\rm{aDZ}) $$   
-                \item Assessing accuracy for various wavefunction and DFT methods 
-                \item Authors recommended MP2.5 and SCS-MI-CCSD, both $O(N^6)$
-                \item We will extend this work to assess the performance of MP2+FDDS (dispersion) for 3B-69 systems
-            \end{itemize}   
-        \end{frame}
-
-        \begin{frame}{3B-69 Wavefunctional Methods}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.45\textwidth]{3B69_wfn.png}
-            \end{figure}
-            \begin{itemize}
-                \item MP2.5 and SCS-MI-CCSD exhibits best cost performance, as in the two-body case
-                \item MP2.5, MP3: Non-iterative $O(N^6)$
-                \item CCSD and variants: Iterative $O(N^6)$
-            \end{itemize}
-        \end{frame}
-
-        \begin{frame}{3B-69 DFT Methods}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.7\textwidth]{3B69_DFT.png}
-            \end{figure}
-            \begin{itemize}
-                \item DFT-D3 accuracies comparable to MP2 at the best, in contrast to the two-body case where DFT-D3 models significantly outperform MP2
-                \item Delocalization error leads to errors in many-body polarization and exchange
-            \end{itemize}
-        \end{frame}
-
-    \subsection{Theory \& Methods}
-
-        \begin{frame}{Three-Body FDDS Dispersion}
-            \begin{itemize}
-                \item Three-body dispersion energy in terms of FDDS, analogous to the two-body dispersion:
-                \begin{eqnarray}
-                    \nonumber
-                    E_{disp,r}^{(3)} &=& -\frac{1}{\pi}\int_0^\infty d\omega \int d\mathbf{r}_A d\mathbf{r}'_A d\mathbf{r}_B d\mathbf{r}'_B d\mathbf{r}_C d\mathbf{r}'_C \\ \nonumber
-                    & & \frac{1}{|\mathbf{r}_A-\mathbf{r}_B|} \frac{1}{|\mathbf{r}'_A-\mathbf{r}_C|} \frac{1}{|\mathbf{r}'_B-\mathbf{r}'_C|} \\ \nonumber
-                    & & \chi^A\left(\mathbf{r}_A,\mathbf{r}'_A|i\omega\right)\chi^B\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)\chi^C\left(\mathbf{r}_B,\mathbf{r}'_B|i\omega\right)
-                \end{eqnarray}
-                \item Transform from position space into density-fitting auxiliary basis space:
-                $$E_{disp,r}^{(3)} = \int_0^\infty d\omega\,\mathrm{Tr}\left(\mathbf{S}^{-1}\boldsymbol{\chi}^A\mathbf{S}^{-1}\boldsymbol{\chi}^B\mathbf{S}^{-1}\boldsymbol{\chi}^C\right)$$
-            \end{itemize}
-        \end{frame}
-
-        \begin{frame}{New Set from X23}
-            \begin{itemize}
-                \item Aiming to construct a "three-body version" of S22$\times$5/S66$\times$8 to investigate three-body interaction for trimers with different intermolecular distances and alignments
-                \item Sampling trimer geometries from X23 crystal structures
-                \item Distance: Geometric mean and mininum of 3 pairwise closest contact distances 
-                \item Alignment: Angles of the COM triangle; mainly looking at the greatest angle
-            \end{itemize}
-        \end{frame}
-
-        \begin{frame}{Research Plan}
-            \begin{itemize}
-                \item Check if MP2+FDDS (dispersion) is a good model for three-body non-additive interaction energy
-                \item If not, compare FDDS dispersion with estimated three-body dispersion energy from $E^{\rm{CCSD(T)}} - E^{\rm{MP2}}$
-                \item Investigate the dependence of three-body dispersion energies on intermolecular distances and alignments, and the difference between FDDS dispersion and $E^{\rm{CCSD(T)}} - E^{\rm{MP2}}$ for different trimer geometries
-                \item Choosing dispersion dominated systems (such as benzene) in X23 to avoid zero dispersion energies at longer distance.
-            \end{itemize}
-        \end{frame}
-
-    \subsection{Results}
-
-        \begin{frame}{3B-69 Initial Test: Systems}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.7\textwidth]{3B69_systems.png}
-            \end{figure}
-        \end{frame}
+    \begin{frame}{Coupled FDDS with Hybrid Kernel}
+        \begin{itemize}
+            \item Recall coupled FDDS for pure ALDA kernel:
+            $$\boldsymbol{\chi} = \boldsymbol{\chi}_0 + \boldsymbol{\chi}_0 \mathbf{S}^{-1} \mathbf{W} \left( \mathbf{S} - \boldsymbol{\chi}_0 \mathbf{S}^{-1} \mathbf{W} \right)^{-1} \boldsymbol{\chi}_0$$
+            \item Coupled FDDS for hybird ALDA kernel, with $(aa'|rr')$ and $(ar'|a'r)$ contributions in $\boldsymbol{\chi}_0'$ and $\mathbf{K}'$:
+            $$\boldsymbol{\chi} = \boldsymbol{\chi}_0' + \left( \boldsymbol{\chi}_0' \mathbf{S}^{-1} \mathbf{W} + \mathbf{K}' \right) \left[ \mathbf{S} - \left( \boldsymbol{\chi}_0' \mathbf{S}^{-1} \mathbf{W} + \mathbf{K}' \right) \right]^{-1} \boldsymbol{\chi}_0'$$
+            \item Dispersion energy from integration over $\omega$:
+            $$E_{\rm{disp,r}}^{(2)} =  -\frac{1}{2\pi}\int_0^\infty d\omega \mathrm{Tr}\left(\mathbf{S}^{-1}\boldsymbol{\chi}^A\mathbf{S}^{-1}\boldsymbol{\chi}\right)$$
+        \end{itemize}
+    \end{frame}
         
-        \begin{frame}{3B-69 Initial Test: Results}
-            \begin{itemize}
-                \item Total three-body non-additive interaction energies in kcal/mol
-                \item CCSD(T) and MP2.5 interaction energies from focus point approach
-            \end{itemize}
-            \begin{table}
-                \centering
-                \begin{tabular}{c c c c c c}
-                    \hline
-                    System & CCSD(T) & MP2+ & MP2+ & MP2 & MP2.5 \\
-                           & & FDDS/aDZ & FDDS/aTZ & & \\ \hline
-                    \textbf{1} & 0.181 & 0.207 & 0.210 & 0.161 & 0.179 \\ 
-                    \textbf{2} & -0.122 & -0.069 & -0.065 & -0.178 & -0.143 \\
-                    \textbf{3} & -0.922 & -0.905 & -0.904 & -0.937 & -0.913 \\
-                    \textbf{4} & -0.089 & -0.003 & -0.003 & -0.239 & -0.151 \\
-                    \textbf{5} & -0.027 & 0.002 & 0.003 & -0.061 & -0.023 \\ \hline
-                \end{tabular}
-            \end{table}
-        \end{frame}
-        
-        \begin{frame}{3B-69 Initial Test: Results}
-            \begin{itemize}
-                \item Comparison of estimated 3-body dispersion energies 
-                \item $\Delta$CCSD(T) corresponds to dispersion energy estimated by $E^{\rm{CCSD(T)}} - E^{\rm{MP2}}$
-            \end{itemize}
-            \begin{table}
-                \centering
-                \begin{tabular}{c c c c}
-                    \hline
-                    System & $\Delta$CCSD(T) & FDDS/aDZ & FDDS/aTZ \\ \hline
-                    \textbf{1} & 0.020 & 0.046 & 0.049 \\ 
-                    \textbf{2} & 0.056 & 0.109 & 0.113 \\
-                    \textbf{3} & 0.015 & 0.032 & 0.033 \\
-                    \textbf{4} & 0.150 & 0.236 & 0.242 \\
-                    \textbf{5} & 0.034 & 0.063 & 0.064 \\ \hline
-                \end{tabular}
-            \end{table}
-        \end{frame}
+    \begin{frame}{Refitting $E_{\rm{exch-disp,r}}^{(2)}$ for non-LHF Orbitals}
+        \begin{itemize}
+            \item LHF vs. non-LHF orbitals: Only affects uncoupled second-order terms like $E_{\rm{disp,u}}^{(2)}$ and $E_{\rm{exch-disp,u}}^{(2)}$
+            \item Similar $E_{\rm{disp,r}}^{(2)}$ for LHF + pure ALDA vs. non-LHF + hybrid ALDA, expect the same for $E_{\rm{exch-disp,r}}^{(2)}$
+            \item Can fit non-LHF $E_{\rm{disp,u}}^{(2)}$ to LHF + pure ALDA $E_{\rm{disp,r}}^{(2)}$:
+            \begin{eqnarray}
+                \nonumber
+                E_{\rm{disp,r}}^{(2)}(hybrid) & \approx & E_{\rm{disp,r}}^{(2)}(LHF) \\ \nonumber
+                & \approx & \alpha \cdot E^{(2)}_{exch-disp,u}(non-LHF)
+            \end{eqnarray}
+            \item Fit for $\alpha$ using S22$\times$5 and test with S66$\times$8
+        \end{itemize}
+    \end{frame}
 
-        \begin{frame}{3B-69 Three-Body Dispersion: $\Delta$MP2.5}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.55\textwidth]{dMP25_dCCSD(T).png}
-            \end{figure}
-        \end{frame}
+    \begin{frame}{SAPT Terms: LHF vs non-LHF Orbitals}
+        \begin{figure}
+        \centering
+        \includegraphics[width=0.8\textwidth]{S66-terms.png}
+        \caption{Hybrid vs. LHF values in kcal/mol for each term for S66 data set: (a) $E_{\rm{elst}}^{(1)}$, (b) $E_{\rm{exch}}^{(1)}$, (c) $E_{\rm{ind}}^{(2)}$, (d) $E_{exch-ind}^{(2)}$, (e) $E_{disp,r}^{(2)}$, (f) $E_{disp,u}^{(2)}$, (g) $E_{exch-disp,u}^{(2)}$} 
+        \end{figure}        
+    \end{frame}
 
-        \begin{frame}{3B-69 Three-Body Dispersion: FDDS}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.55\textwidth]{FDDS_dCCSD(T).png}
-            \end{figure}
-        \end{frame}
+    \begin{frame}{Fitting: S22$\times$5}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.55\textwidth]{S22x5-exchdisp.png}
+        \end{figure}   
+    \end{frame}
 
-        \begin{frame}{Crystalline Benzene 3-Body Dispersion}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{benzene_FDDS.png}
-            \end{figure}
-        \end{frame}
+    \begin{frame}{Testing: S66$\times$8}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.55\textwidth]{S66x8-exchdisp.png}
+        \end{figure}   
+    \end{frame}
 
-        \begin{frame}{Crystalline Benzene 3-Body Dispersion}
-            \begin{figure}
-                \centering
-                \includegraphics[width=0.8\textwidth]{benzene_FDDS_log.png}
-            \end{figure}
-        \end{frame}
+\section{SAPT(DFT): Results}
+
+    \begin{frame}{Computational Approach}
+        \begin{itemize}
+            \item Benchmarking with S66 dimer set
+            \item Using SAPT2+3(CCD)$\delta$MP2/aug-cc-pVTZ as reference
+            \item Compare electrostatics, exchange, induction, dispersion terms and total IE
+            \item Using aug-cc-pVDZ for SAPT0 and SAPT2+, aug-cc-pVTZ for other methods 
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{S66 Results}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.8\textwidth]{S66_1.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{S66 Results (cont.)}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.8\textwidth]{S66_2.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{Timing Systems}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.8\textwidth]{timingsystems.png}
+            \caption{Dimer systems for timing: (a) Watson-Crick adenine-thymine complex, (b) RDX dimer, (c) C$_{\textrm{60}}$--buckycather complex.}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{Watson-Crick Adenine-Thymine}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.8\textwidth]{wcat.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{RDX Dimer}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.8\textwidth]{RDX.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{C$_{\textrm{60}}$--Buckycatcher Complex}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.6\textwidth]{C60_buckycatcher.png}
+        \end{figure}
+    \end{frame}
+
+\section{SAPT(DFT): Conclusions}
+
+    \begin{frame}{Conclusions}
+       \begin{itemize}
+            \item Implemented SAPT(DFT) using hybrid xc kernel, applicable to up to 3000 basis functions
+            \item Scaling factor of $E_{\rm{exch-disp}}^{(2)}$ determined to be 0.770
+            \item Accuracy of SAPT(DFT) comparable to SAPT2+ which scales as $O(N^7)$
+            \item Iterative $O(N^4)$ terms not negligible; even dominating for smaller systems
+       \end{itemize}
+    \end{frame}
+
+\section{Three-Body Dispersion: Background}
+
+    \begin{frame}{Three-Body Interaction Energies}
+        \begin{itemize}
+            \item Cheapest conventional methods to model three-body interaction energies scale as $O(N^6)$ [MP2.5, SCS(MI)-CCSD]
+            \item MP2 lacks three-body dispersion interactions
+            \item Combine supermolecular MP2 with three-body dispersion correction term 
+            \item Reduces computational cost for three-body interaction energies to the level of $O(N^5)$
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{CKS FDDS Dispersion}
+        \begin{itemize}
+            \item Two-body FDDS dispersion term in SAPT(DFT):
+            $$E_{\rm{disp,r}}^{(2)} =  -\frac{1}{2\pi}\int_0^\infty d\omega \mathrm{Tr}\left(\mathbf{S}^{-1}\boldsymbol{\chi}^A\mathbf{S}^{-1}\boldsymbol{\chi}\right)$$
+            \item Generalize to three-body case:
+            $$E_{\rm{disp,r}}^{(3)} = \int_0^\infty d\omega\,\mathrm{Tr}\left(\mathbf{S}^{-1}\boldsymbol{\chi}^A\mathbf{S}^{-1}\boldsymbol{\chi}^B\mathbf{S}^{-1}\boldsymbol{\chi}^C\right)$$
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{Axilrod--Teller--Muto Dispersion}
+        \begin{itemize}
+            \item Dispersion energy of atom triplet:
+            $$E_{\rm{ATM}}^{abc} = C_9^{abc} \frac{1 + 3{\rm{cos}} \theta_a {\rm{cos}} \theta_b {\rm{cos}} \theta_c}{(R_{ab}R_{bc}R_{ca})^3}$$
+            $$C_9^{abc} \approx \sqrt{C_6^{ab} C_6^{bc} C_6^{ca}}$$
+            \item Sum over atom triplets:
+            $$E_{\rm{ATM}}^{ABC} = \sum_{a \in A} \sum_{b \in B}, \sum_{c \in C} f^{abc}_9 E_{\rm{ATM}}^{abc}$$
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{Empirical Damping}
+        \begin{itemize}
+            \item Tang--Toennies damping function:
+            $$f^{abc}_9 = f^{ab}_6(R_{ab}, \beta) f^{ac}_6(R_{ab}, \beta) f^{ca}_6(R_{ab}, \beta)$$
+            $$f_6(R, \beta) = 1 - \sum_{k=0}^{6} \left( \frac{\left(\beta R\right)^k}{k!} \right) e^{-\beta R}$$
+            \item Chai--Head-Gordon damping function:
+            $$f^{abc}_9 = \frac{1}{1 + 6 \left(\bar{R}_{abc}\right)^{-16}}$$
+            $$\bar{R}_{abc} = \left(R_{ab} R_{bc} R_{ca} / R^{ab}_{0,BJ} R^{ac}_{0,BJ} R^{ca}_{0,BJ} \right)^{1/3}$$
+        \end{itemize}
+    \end{frame}
+
+
+\section{Three-Body Dispersion: Results}
+
+    \begin{frame}{Geometric Parameters}
+        \begin{itemize}
+            \item Define geometrical parameters based on intermolecular distances
+            \item $R_{\rm{min}}$: Smallest of three closest-contact distances
+            \item $R_{\rm{max}}$: Largest of three closest-contact distances
+            \item Analyze growth of three-body contribution to crystal lattice energy with respect to $R_{\rm{min}}$ and $R_{\rm{max}}$
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{Geometric Parameters}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.55\textwidth]{geom_param.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{Computational Methods}
+        \begin{itemize}
+            \item Crystalline benzene, carbon dioxide and triazine
+            \item Using CCSD(T) with focal point approach as reference
+            $$E = E^{\rm{HF}}(\rm{aQZ}) + \Delta E^{\rm{MP2}}(\rm{aTZ/aQZ}) + \Delta E^{\rm{CCSD(T)}}(\rm{aDZ}) $$
+            \item Compare three-body contribution to crystal lattice energies with various methods: MP2, MP2+ATM(undamped/TT/CHG), MP2+CKS, MP2.5, SCS(MI)-CCSD, CCSD(T)
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{$R_{\rm{min}}$ Dependence: Benzene}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.55\textwidth]{benzene_Rmin.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{$R_{\rm{min}}$ Dependence: Carbon Dioxide}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.55\textwidth]{carbon_dioxide_Rmin.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{$R_{\rm{min}}$ Dependence: Triazine}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.55\textwidth]{triazine_Rmin.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{$R_{\rm{max}}$ Dependence: Benzene}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.55\textwidth]{benzene_Rmax.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{$R_{\rm{max}}$ Dependence: Carbon Dioxide}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.55\textwidth]{carbon_dioxide_Rmax.png}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{$R_{\rm{max}}$ Dependence: Triazine}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.55\textwidth]{triazine_Rmax.png}
+        \end{figure}
+    \end{frame}
+    
+\section{Three-Body Dispersion: Conclusions}
+
+    \begin{frame}{Conclusions}
+       \begin{itemize}
+            \item Three-body crystal lattice energies converge quickly as $R_{\rm{min}}$ increases, less smooth for $R_{\rm{max}}$ but can be cutoff at 10~\AA
+            \item Three-body dispersion contributions crucial to lattice energies for crystals studied
+            \item CKS FDDS dispersion overestimates three-body dispersion, likely missing exchange-dispersion terms
+            \item Performance of Tang-Toennies damped ATM comparable to MP2.5
+            \item Can use CCSD(T) for trimers with small $R_{\rm{min}}$ and MP2+ATM(TT) for larger ones
+       \end{itemize}
+    \end{frame}
 
 \section{Acknowledgment}
 
-        \begin{frame}{Acknowledgment}
-            Thesis advisor:
-
-            \hspace{36pt} Dr. C. David Sherrill \\
-
-            Thesis committee members:
-
-            \hspace{36pt} Dr. Jesse G. McDaniel
-
-            \hspace{36pt} Dr. Thomas M. Orlando
-
-            \hspace{36pt} Dr. Edmond Chow 
-
-            \hspace{36pt} Dr. Joshua S. Kretchmer \\
-
-            Special thanks for implementing 3-body FDDS dispersion and providing data for crystalline benzene:
-
-            \hspace{36pt} Zachary L. Glick
-        \end{frame}
-
+    \begin{frame}{Acknowledgment}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.7\textwidth]{group_21Jul.jpg}
+        \end{figure}
+    \end{frame}
+    
         %\begin{frame}{GRAC}
         %    \begin{itemize}
         %        \item (Hybrid-)GGA functionals does not have correct long-range behavior $v_{xc}(r) \rightarrow -1/r + (I_p + \epsilon_{\text{HOMO}})$
